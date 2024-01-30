@@ -1,23 +1,14 @@
 import { useState, ChangeEvent, FormEvent } from 'react';
+import { FormConfig, FormErrors, FormProps, FormValues } from '../types/formTypes';
 
-type FormValues = {
-  [key: string]: string;
-};
 
-type FormErrors = {
-  [key: string]: string;
-};
+const useForm = <T extends FormValues>(config: FormConfig<T>) => {
+  const {initialState, validate, endpoint} = config;
 
-type FormProps<T> = {
-  formData: T;
-  formErrors: FormErrors;
-  handleChange: (e: ChangeEvent<HTMLInputElement>) => void;
-  handleSubmit: (e: FormEvent<HTMLFormElement>) => void;
-};
-
-const useForm = <T extends FormValues>(initialState: T, validate: (data: T) => FormErrors) => {
   const [formData, setFormData] = useState<T>(initialState);
   const [formErrors, setFormErrors] = useState<FormErrors>({});
+  const [serverErrorMessage, setServerError] = useState<string>("");
+  const [sucess, setSucess] = useState<boolean>(false);
 
   const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -32,7 +23,7 @@ const useForm = <T extends FormValues>(initialState: T, validate: (data: T) => F
     }));
   };
 
-  const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
     // Validate form data
@@ -44,7 +35,30 @@ const useForm = <T extends FormValues>(initialState: T, validate: (data: T) => F
       return;
     }
 
-    // Proceed with form submission logic
+    try {
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData)
+      });
+
+      if (response.ok) {
+        setSucess(true);
+      }
+      else {
+        setSucess(false);
+        const errorMessage = await response.text();
+        setServerError(`Server error: ${errorMessage}`)
+      }
+
+    } catch(error) {
+      console.error('Error was encountered while processing the request', error);
+      setSucess(false);
+      setServerError(`Error was encountered while processing the request ${error}`);
+    }
+
     console.log('Form submitted:', formData);
   };
 
@@ -53,6 +67,8 @@ const useForm = <T extends FormValues>(initialState: T, validate: (data: T) => F
     formErrors,
     handleChange,
     handleSubmit,
+    serverErrorMessage,
+    sucess,
   } as FormProps<T>;
 };
 

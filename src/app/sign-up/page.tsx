@@ -1,16 +1,11 @@
 'use client'
 
 import useForm from "@/src/hooks/useForm";
+import { FormValues, FormErrors } from "@/src/types/formTypes";
 
-type  FormValues = {
-  email: string;
-  username: string;
-  password: string;
-  confirmPassword: string;
-}
 
-const validateForm = (data: FormValues) => {
-  const errors: Record<string, string> = {};
+const validate = (data: FormValues) : FormErrors => {
+  const errors: FormErrors = {};
 
   if (!data.email) {
     errors.email = 'Email is required';
@@ -24,24 +19,41 @@ const validateForm = (data: FormValues) => {
     errors.password = 'Password is required';
   }
 
+  if (data.password.length < 8) {
+    errors.password = 'Password must have more than 8 characters';
+  }
+
+  if (data.password.length > 100) {
+    errors.password = 'Password is too long';
+  }
+
+  if (data.password !== data.confirmPassword) {
+    errors.confirmPassword = 'Password do not match';
+  }
+
   return errors;
 }
 
+const initialState = {
+  email: '',
+  username: '',
+  password: '',
+  confirmPassword: '',
+}
 
+const endpoint = "api/user/sign-up";
 
-export default function Register() {
-    const { formData, formErrors, handleChange, handleSubmit } = useForm<FormValues>(
-      {
-        email: '',
-        username: '',
-        password: '',
-        confirmPassword: '',
-      },
-      validateForm
-    );
+const config = {
+  initialState,
+  validate,
+  endpoint,
+}
+
+export default function SignUp() {
+  const { formData, formErrors, handleChange, handleSubmit, serverErrorMessage, sucess } = useForm<FormValues>(config);
 
   return (
-    <form className="flex flex-col justify-center items-center gap-10 pt-10" onSubmit={handleSubmit}>
+    <form onSubmit={handleSubmit} method="POST" className="flex flex-col justify-center items-center gap-10 pt-10">
       <input 
         className="appearance-none border rounded py-2 px-3 focus:outline-none" 
         type="email" 
@@ -50,7 +62,7 @@ export default function Register() {
         onChange={handleChange}
         placeholder="Email" 
       />
-      {formErrors.email && <div className="error">{formErrors.email}</div>}
+      {formErrors.email ? <div className="error">{formErrors.email}</div> : ""}
       <input 
         className="appearance-none border rounded py-2 px-3 focus:outline-none" 
         type="text" 
@@ -59,7 +71,7 @@ export default function Register() {
         onChange={handleChange}
         placeholder="Username" 
       />        
-      {formErrors.username && <div className="error">{formErrors.username}</div>}
+      {formErrors.username ? <div className="error">{formErrors.username}</div> : ""}
       <input 
         className="appearance-none border rounded py-2 px-3 focus:outline-none" 
         type="password" 
@@ -68,6 +80,7 @@ export default function Register() {
         onChange={handleChange}
         placeholder="Password" 
       />
+      {formErrors.password ? <div className="error">{formErrors.password}</div> : ""}
       <input 
         className="appearance-none border rounded py-2 px-3 focus:outline-none" 
         type="password" 
@@ -76,7 +89,10 @@ export default function Register() {
         onChange={handleChange}
         placeholder="Confirm Password" 
       />
+      {formErrors.confirmPassword ? <div className="error">{formErrors.confirmPassword}</div> : ""}
       <button className="bg-black px-20 py-2 rounded text-white" type="submit">Sign up</button>
+      { sucess ? <h1>form submited sucessful</h1> : ""}
+      { serverErrorMessage ? <h1>{serverErrorMessage}</h1> : ""}
     </form>
   );
 }
