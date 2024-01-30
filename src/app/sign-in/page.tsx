@@ -1,5 +1,9 @@
+'use client'
+
 import useForm from "@/src/hooks/useForm";
 import { FormValues, FormErrors } from "@/src/types/formTypes";
+import { signIn } from "next-auth/react";
+import { FormEvent } from "react";
 
 
 const validate = (data: FormValues) : FormErrors => {
@@ -34,26 +38,44 @@ const config = {
 }
 
 export default function SignIn() {
-  const { formData, formErrors, handleChange, handleSubmit, serverErrorMessage, sucess } = useForm<FormValues>(config);
+  const { formData, formErrors, handleChange, serverErrorMessage } = useForm<FormValues>(config);
+
+  const handleSubmit = async (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+
+    const signInData = await signIn('credentials', {
+      email: formData.email,
+      password: formData.password,
+      redirect: false,
+    });
+
+    console.log(signInData);
+  }
 
   return (
-    <form className="flex flex-col justify-center items-center gap-10 pt-10">
+    <form onSubmit={handleSubmit} className="flex flex-col justify-center items-center gap-10 pt-10">
       <input 
         className="appearance-none border rounded py-2 px-3 focus:outline-none" 
         type="email" 
         name="email" 
         value={formData.email}
+        onChange={handleChange}
         placeholder="Email" 
         required 
       />
+      {formErrors.email ? <div className="error">{formErrors.email}</div> : ""}
       <input 
         className="appearance-none border rounded py-2 px-3 focus:outline-none" 
         type="password" 
         name="password" 
+        value={formData.password}
+        onChange={handleChange}
         placeholder="Password" 
         required 
       />
+      {formErrors.password ? <div className="error">{formErrors.password}</div> : ""}
       <button className="bg-black px-20 py-2 rounded text-white" type="submit">Sign in</button>
+      {serverErrorMessage ? <div className="error">{serverErrorMessage}</div> : ""}
     </form>
   );
 }

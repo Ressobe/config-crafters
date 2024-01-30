@@ -9,9 +9,9 @@ export const authOptions: NextAuthOptions = {
   session: {
     strategy: 'jwt'
   },
-  // pages: {
-  //   signIn: '/login',
-  // },
+  pages: {
+    signIn: '/sign-in',
+  },
   providers: [
     CredentialsProvider({
       name: "Credentials",
@@ -20,7 +20,7 @@ export const authOptions: NextAuthOptions = {
         password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials.password) {
+        if (!credentials?.email || !credentials?.password) {
           return null;
         }
         const existingUser = await db.user.findUnique({
@@ -29,8 +29,8 @@ export const authOptions: NextAuthOptions = {
         if (!existingUser) { return null; }
         
         const passwordMatched = await compare(credentials.password, existingUser.password);
-        if (!passwordMatched) { return null; }
 
+        if (!passwordMatched) { return null; }
 
         return {
           id: `${existingUser.id}`,
